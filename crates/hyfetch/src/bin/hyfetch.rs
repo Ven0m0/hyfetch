@@ -118,8 +118,6 @@ fn main() -> Result<()> {
         .context("failed to write message to stdout")?;
 
         if !june_path.is_file() {
-            fs::create_dir_all(&cache_path)
-                .with_context(|| format!("failed to create cache dir {cache_path:?}"))?;
             File::create(&june_path)
                 .with_context(|| format!("failed to create file {june_path:?}"))?;
         }
@@ -249,7 +247,8 @@ fn create_config(
     });
     debug!(?det_ansi, "detected color mode");
 
-    let asc = get_distro_ascii(distro, backend).context("failed to get distro ascii")?;
+    // Try to get ascii from given backend first, if it fails, try neofetch backend
+    let asc = get_distro_ascii(distro, backend).or_else(|_| get_distro_ascii(distro, Backend::Neofetch)).context("failed to get distro ascii from neofetch backend")?;
     let asc = asc.to_normalized().context("failed to normalize ascii")?;
     let theme = det_bg.map(|bg| bg.theme()).unwrap_or_default();
     let color_mode = det_ansi.unwrap_or(AnsiMode::Ansi256);
@@ -293,16 +292,8 @@ fn create_config(
     // 0. Check term size
 
     {
-        let (Width(term_w), Height(term_h)) =
-            terminal_size().context("failed to get terminal size")?;
-        let (term_w_min, term_h_min) = (
-            u16::from(asc.w)
-                .checked_mul(2)
-                .unwrap()
-                .checked_add(4)
-                .unwrap(),
-            30,
-        );
+        let (Width(term_w), Height(term_h)) = terminal_size().context("failed to get terminal size")?;
+        let (term_w_min, term_h_min) = ((asc.w as u32 * 2 + 4).clamp(0, u16::MAX.into()) as u16, 30);
         if term_w < term_w_min || term_h < term_h_min {
             printc(
                 format!(
@@ -504,28 +495,12 @@ fn create_config(
 
     // Calculate flags per row
     let (flags_per_row, rows_per_page) = {
-        let (Width(term_w), Height(term_h)) =
-            terminal_size().context("failed to get terminal size")?;
-        let flags_per_row = term_w.div_euclid(u16::from(spacing).checked_add(2).unwrap());
-        let flags_per_row: u8 = flags_per_row
-            .try_into()
-            .expect("`flags_per_row` should fit in `u8`");
-        let rows_per_page = cmp::max(1, term_h.saturating_sub(13).div_euclid(5));
-        let rows_per_page: u8 = rows_per_page
-            .try_into()
-            .expect("`rows_per_page` should fit in `u8`");
+        let (Width(term_w), Height(term_h)) = terminal_size().context("failed to get term size")?;
+        let flags_per_row = (term_w / (spacing as u16 + 2)).clamp(0, u8::MAX.into()) as u8;
+        let rows_per_page = (term_h.saturating_sub(13) / 5).clamp(1, u8::MAX.into()) as u8;
         (flags_per_row, rows_per_page)
     };
-    let num_pages =
-        u16::from(u8::try_from(Preset::COUNT).expect("`Preset::COUNT` should fit in `u8`"))
-            .div_ceil(
-                u16::from(flags_per_row)
-                    .checked_mul(u16::from(rows_per_page))
-                    .unwrap(),
-            );
-    let num_pages: u8 = num_pages
-        .try_into()
-        .expect("`num_pages` should fit in `u8`");
+    let num_pages = (Preset::COUNT.div_ceil(flags_per_row as usize * rows_per_page as usize)).clamp(0, u8::MAX.into()) as u8;
 
     // Create pages
     let mut pages = Vec::with_capacity(usize::from(num_pages));
@@ -671,11 +646,7 @@ fn create_config(
         // Print cats
         {
             let (Width(term_w), _) = terminal_size().context("failed to get terminal size")?;
-            let num_cols = cmp::max(
-                1,
-                term_w.div_euclid(u16::from(test_ascii.w).checked_add(2).unwrap()),
-            );
-            let num_cols: u8 = num_cols.try_into().expect("`num_cols` should fit in `u8`");
+            let num_cols = (term_w / (test_ascii.w as u16 + 2)).clamp(1, u8::MAX.into()) as u8;
             const MIN: f32 = 0.15;
             const MAX: f32 = 0.85;
             let ratios =
@@ -784,40 +755,23 @@ fn create_config(
         &format!("{lightness:.2}", lightness = f32::from(lightness)),
     );
 
-   //////////////////////////////
-   // 5. Choose Default or Small Logo
+    //////////////////////////////
+    // 5. Choose Default or Small Logo
 
     // Calculate amount of row/column that can be displayed on screen
     let (ascii_per_row, ascii_rows) = {
-        let (Width(term_w), Height(term_h)) =
-            terminal_size().context("failed to get terminal size")?;
-        let ascii_per_row = cmp::max(
-            1,
-            term_w.div_euclid(u16::from(asc.w).checked_add(2).unwrap()),
-        );
-        let ascii_per_row: u8 = ascii_per_row
-            .try_into()
-            .expect("`ascii_per_row` should fit in `u8`");
-        let ascii_rows = cmp::max(
-            1,
-            term_h
-                .saturating_sub(8)
-                .div_euclid(u16::from(asc.h).checked_add(1).unwrap()),
-        );
-        let ascii_rows: u8 = ascii_rows
-            .try_into()
-            .expect("`ascii_rows` should fit in `u8`");
+        let (Width(term_w), Height(term_h)) = terminal_size().context("failed to get terminal size")?;
+        let ascii_per_row = (term_w / (asc.w as u16 + 4)).clamp(1, u8::MAX.into()) as u8;
+        let ascii_rows = (term_h.saturating_sub(8) / (asc.h as u16 + 1)).clamp(1, u8::MAX.into()) as u8;
         (ascii_per_row, ascii_rows)
     };
 
     // get distro string and convert it into the enum, neofetch friendly format, so we can check for small logos with the {distro}_small neofetch naming scheme.
-    let get_current_dst_str= get_distro_name(backend).context("failed to get current distro.")?;
-    
-    let detected_dst: Option<String> = if distro.is_none() {
-        Some(format!("{:?}", Distro::detect(get_current_dst_str).unwrap()))
-    } else {
-        Some(distro.unwrap().to_string())
-    };
+    let tmp_dst = get_distro_name(backend).or_else(|_| get_distro_name(Backend::Neofetch)).context("failed to get distro name")?;
+    let detected_dst = Some(distro.map_or_else(
+        || format!("{:?}", Distro::detect(tmp_dst).unwrap()),
+        |d| d.to_string(),
+    ));
 
     // in case someone specified {distro}_small already in the --distro arg
     let detected_dst_small_fmt = if !detected_dst.clone().unwrap().ends_with("_small") {
@@ -890,8 +844,6 @@ fn create_config(
                             line.push(&*lines[i]);
                     }
                     printc(line.join("                 "), color_mode).context("failed to print ascii line")?; 
-                    
-                    
                 }
         
                 writeln!(io::stdout()).context("failed to write to stdout")?;
@@ -923,6 +875,7 @@ fn create_config(
             break;
         }
     }
+
     //////////////////////////////
     // 6. Color arrangement
 
@@ -958,10 +911,7 @@ fn create_config(
         clear_screen(Some(&title), color_mode, debug_mode).context("failed to clear screen")?;
 
         // Random color schemes
-        let mut preset_indices: Vec<PresetIndexedColor> =
-            (0..color_profile.unique_colors().colors.len())
-                .map(|pi| u8::try_from(pi).expect("`pi` should fit in `u8`").into())
-                .collect();
+        let mut preset_indices: Vec<PresetIndexedColor> = (0..color_profile.unique_colors().colors.len()).map(|x| (x as u8).into()).collect();
         while preset_indices.len() < slots.len() {
             preset_indices.extend_from_within(0..);
         }
@@ -970,13 +920,7 @@ fn create_config(
             .permutations(slots.len())
             .take(1000)
             .collect();
-        let random_count = u16::from(ascii_per_row)
-            .checked_mul(u16::from(ascii_rows))
-            .unwrap()
-            .saturating_sub(u8::try_from(arrangements.len()).unwrap().into());
-        let random_count: u8 = random_count
-            .try_into()
-            .expect("`random_count` should fit in `u8`");
+        let random_count = (ascii_per_row as usize * ascii_rows as usize).saturating_sub(arrangements.len()).clamp(0, u8::MAX.into()) as u8;
         let choices: IndexSet<Vec<PresetIndexedColor>> =
             if usize::from(random_count) > preset_index_permutations.len() {
                 preset_index_permutations

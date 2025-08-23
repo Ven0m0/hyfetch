@@ -1,7 +1,9 @@
+use std::env;
 use std::fmt::Write as _;
-use std::path::Path;
-use std::{env, fs};
+use std::fs;
+use std::path::{Path, PathBuf};
 
+use fs_extra::dir::{CopyOptions};
 use indexmap::IndexMap;
 use regex::Regex;
 use unicode_normalization::UnicodeNormalization as _;
@@ -23,18 +25,32 @@ impl AsciiDistro {
     }
 }
 
+fn anything_that_exist(paths: &[&Path]) -> Option<PathBuf> {
+    paths.iter().copied().find(|p| p.exists()).map(Path::to_path_buf)
+}
+
 fn main() {
-    let neofetch_path = Path::new(env!("CARGO_WORKSPACE_DIR")).join("neofetch");
+    // Path hack to make file paths work in both workspace and manifest directory
+    let dir = PathBuf::from(env::var_os("CARGO_WORKSPACE_DIR").unwrap_or_else(|| env::var_os("CARGO_MANIFEST_DIR").unwrap()));
+    let o = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
-    println!(
-        "cargo:rerun-if-changed={neofetch_path}",
-        neofetch_path = neofetch_path.display()
-    );
+    for file in &["neofetch", "hyfetch"] {
+        let src = anything_that_exist(&[
+            &dir.join(file),
+            &dir.join("../../").join(file),
+        ]).expect("couldn't find neofetch");
+        let dst = o.join(file);
+        println!("cargo:rerun-if-changed={}", src.display());
 
-    let out_dir = env::var_os("OUT_DIR").unwrap();
-    let out_path = Path::new(&out_dir);
+        // Copy either file or directory
+        if src.is_dir() {
+            let opt = CopyOptions { overwrite: true, copy_inside: true, ..CopyOptions::default() };
+            fs_extra::dir::copy(&src, &dst, &opt).expect("Failed to copy directory to OUT_DIR");
+        }
+        else { fs::copy(&src, &dst).expect("Failed to copy file to OUT_DIR"); }
+    }
 
-    export_distros(neofetch_path, out_path);
+    export_distros(&o.join("neofetch"), &o);
 }
 
 fn export_distros<P>(neofetch_path: P, out_path: &Path)

@@ -53,7 +53,7 @@ _/\_\_   _/_/\_
 pub const NEOFETCH_COLOR_PATTERNS: [&str; 6] =
     ["${c1}", "${c2}", "${c3}", "${c4}", "${c5}", "${c6}"];
 pub static NEOFETCH_COLORS_AC: OnceLock<AhoCorasick> = OnceLock::new();
-pub const NEOFETCH_SCRIPT: &str = include_str!("../../../neofetch");
+pub const NEOFETCH_SCRIPT: &str = include_str!(concat!(env!("OUT_DIR"), "/neofetch"));
 
 #[derive(Clone, Eq, PartialEq, Debug, AsRefStr, Deserialize, Serialize)]
 #[serde(tag = "mode")]
@@ -486,16 +486,13 @@ pub fn get_distro_name(backend: Backend) -> Result<String> {
     match backend {
         Backend::Neofetch => run_neofetch_command_piped(&["ascii_distro_name"])
             .context("failed to get distro name from neofetch"),
-        Backend::Fastfetch => run_fastfetch_command_piped(&[
+        Backend::Fastfetch => Ok(run_fastfetch_command_piped(&[
             "--logo",
             "none",
             "-s",
             "OS",
             "--disable-linewrap",
-            "--os-key",
-            " ",
-        ])
-        .context("failed to get distro name from fastfetch"),
+        ]).context("failed to get distro name from fastfetch")?.replace("OS: ", "")),
         #[cfg(feature = "macchina")]
         Backend::Macchina => {
             // Write ascii art to temp file
