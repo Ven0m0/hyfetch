@@ -51,8 +51,15 @@ def edit_versions(version: str):
     path = Path('hyfetch/__version__.py')
     content = [f"VERSION = '{version}'" if l.startswith('VERSION = ') else l for l in path.read_text().split('\n')]
     path.write_text('\n'.join(content))
+    
+    # 3. Cargo.toml
+    print('Editing Cargo.toml...')
+    path = Path('Cargo.toml')
+    content = path.read_text()
+    content = re.sub(r'(?<=^version = ")[^"]+(?="$)', version, content, flags=re.MULTILINE)
+    path.write_text(content)
 
-    # 3. README.md
+    # 4. README.md
     print('Editing README.md...')
     path = Path('README.md')
     content = path.read_text()
@@ -61,7 +68,7 @@ def edit_versions(version: str):
     content = content[:changelog_i] + f'\n\n### {version}' + content[changelog_i:]
     path.write_text(content)
 
-    # 4. neofetch script
+    # 5. neofetch script
     print('Editing neofetch...')
     path = Path('neofetch')
     lines = path.read_text().replace("\t", "        ").split('\n')
@@ -125,7 +132,12 @@ def create_release(v: str):
     subprocess.check_call(['git', 'tag', f'neofetch-{NEOFETCH_NEW_VERSION}'])
 
     i = input('Please check the commit is correct. Press y to continue or any other key to cancel.')
-    assert i == 'y'
+    if i.lower() != 'y':
+        print('Aborting...')
+        subprocess.check_call(['git', 'reset', '--hard', 'HEAD~1'])
+        subprocess.check_call(['git', 'tag', '-d', v])
+        subprocess.check_call(['git', 'tag', '-d', f'neofetch-{NEOFETCH_NEW_VERSION}'])
+        exit(1)
 
     # 4. Push
     print('Pushing commits...')

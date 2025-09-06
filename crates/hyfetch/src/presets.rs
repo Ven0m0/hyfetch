@@ -63,6 +63,8 @@ pub enum Preset {
 
     Aromantic,
 
+    Fictosexual,
+
     Aroace1,
 
     Aroace2,
@@ -110,6 +112,10 @@ pub enum Preset {
     Girlflux,
 
     Genderflux,
+
+    Nullflux,
+
+    Hypergender, Hyperboy, Hypergirl, Hyperandrogyne, Hyperneutrois,
 
     Finsexual,
 
@@ -164,6 +170,8 @@ pub enum Preset {
     Otter,
 
     Twink,
+
+    Adipophilia,
 
     Kenochoric,
 
@@ -304,6 +312,11 @@ impl Preset {
                 "#3BA740", "#A8D47A", "#FFFFFF", "#ABABAB", "#000000",
             ]),
 
+            // https://orientation.fandom.com/wiki/Fictosexual
+            Self::Fictosexual => ColorProfile::from_hex_colors(vec![
+                "#000000", "#C4C4C4", "#A349A5", "#C4C4C4", "#000000",
+            ]),
+
             // sourced from https://flag.library.lgbt/flags/aroace/
             Self::Aroace1 => ColorProfile::from_hex_colors(vec![
                 "#E28C00", "#ECCD00", "#FFFFFF", "#62AEDC", "#203856",
@@ -433,6 +446,30 @@ impl Preset {
                 "f47694", "f2a2b9", "cecece", "7ce0f7", "3ecdf9", "fff48d",
             ]),
 
+            Self::Nullflux => ColorProfile::from_hex_colors(vec![
+                "#0B0C0E", "#A28DB9", "#E1D4EF", "#F0E6DD", "#665858",
+            ]),
+
+            Self::Hypergender => ColorProfile::from_hex_colors(vec![
+                "#EFEFEF", "#FFFFFF", "#FBFF75", "#000000", "#FBFF75", "#FFFFFF", "#EFEFEF",
+            ]),
+
+            Self::Hyperboy => ColorProfile::from_hex_colors(vec![
+                "#EFEFEF", "#FFFFFF", "#74D7FE", "#000000", "#74D7FE", "#FFFFFF", "#EFEFEF",
+            ]),
+
+            Self::Hypergirl => ColorProfile::from_hex_colors(vec![
+                "#EFEFEF", "#FFFFFF", "#FC76D3", "#000000", "#FC76D3", "#FFFFFF", "#EFEFEF",
+            ]),
+
+            Self::Hyperandrogyne => ColorProfile::from_hex_colors(vec![
+                "#EFEFEF", "#FFFFFF", "#BB83FF", "#000000", "#BB83FF", "#FFFFFF", "#EFEFEF",
+            ]),
+
+            Self::Hyperneutrois => ColorProfile::from_hex_colors(vec![
+                "#EFEFEF", "#FFFFFF", "#BAFA74", "#000000", "#BAFA74", "#FFFFFF", "#EFEFEF",
+            ]),
+
             // sourced from https://lgbtqia.wiki/wiki/Finsexual
             Self::Finsexual => ColorProfile::from_hex_colors(vec![
                 "#B18EDF", "#D7B1E2", "#F7CDE9", "#F39FCE", "#EA7BB3",
@@ -542,6 +579,11 @@ impl Preset {
 
             // colorpicked from https://commons.wikimedia.org/wiki/File:Twink_Pride_Flag_(proposed).svg
             Self::Twink => ColorProfile::from_hex_colors(vec!["#FFB2FF", "#FFFFFF", "#FFFF81"]),
+
+            // https://en.wikipedia.org/wiki/File:FatFetishFlag.png
+            Self::Adipophilia => ColorProfile::from_hex_colors(vec![
+                "#000000", "#E16180", "#FFF9BE", "#603E41", "#000000",
+            ]),
 
             Self::Kenochoric => {
                 ColorProfile::from_hex_colors(vec!["#000000", "#2E1569", "#824DB7", "#C7A1D6"])

@@ -300,6 +300,9 @@ PRESETS: dict[str, ColorProfile] = {
         '#ABABAB',
         '#000000'
     ]),
+    
+    # https://orientation.fandom.com/wiki/Fictosexual
+    'fictosexual': ColorProfile(["#000000", "#C4C4C4", "#A349A5", "#C4C4C4", "#000000"]),
 
     # aroace1 sourced from https://flag.library.lgbt/flags/aroace/
     'aroace1': ColorProfile([
@@ -550,6 +553,27 @@ PRESETS: dict[str, ColorProfile] = {
         "3ecdf9",
         "fff48d",
     ]),
+    
+    # https://lgbtqia.wiki/wiki/Gendernull
+    'nullflux': ColorProfile([
+        '#0B0C0E', '#A28DB9', '#E1D4EF', '#F0E6DD', '#665858',
+    ]),
+    
+    'hypergender': ColorProfile([
+        "#EFEFEF", "#FFFFFF", "#FBFF75", "#000000", "#FBFF75", "#FFFFFF", "#EFEFEF",
+    ]),
+    'hyperboy': ColorProfile([
+        "#EFEFEF", "#FFFFFF", "#74D7FE", "#000000", "#74D7FE", "#FFFFFF", "#EFEFEF",
+    ]),
+    'hypergirl': ColorProfile([
+        "#EFEFEF", "#FFFFFF", "#FC76D3", "#000000", "#FC76D3", "#FFFFFF", "#EFEFEF",
+    ]),
+    'hyperandrogyne': ColorProfile([
+        "#EFEFEF", "#FFFFFF", "#BB83FF", "#000000", "#BB83FF", "#FFFFFF", "#EFEFEF",
+    ]),
+    'hyperneutrois': ColorProfile([
+        "#EFEFEF", "#FFFFFF", "#BAFA74", "#000000", "#BAFA74", "#FFFFFF", "#EFEFEF",
+    ]),
 
     "finsexual": ColorProfile([
         "#B18EDF",
@@ -751,6 +775,9 @@ PRESETS: dict[str, ColorProfile] = {
         '#FFFFFF',
         '#FFFF81',
     ]),
+    
+    # https://en.wikipedia.org/wiki/File:FatFetishFlag.png
+    'adipophilia': ColorProfile(["#000000", "#E16180", "#FFF9BE", "#603E41", "#000000"]),
 
     'kenochoric': ColorProfile([
         '#000000',
