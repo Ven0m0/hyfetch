@@ -1,4 +1,6 @@
 name: arch_package
+permissions:
+  contents: write
 
 on:
   release:
